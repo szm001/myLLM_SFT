@@ -48,7 +48,7 @@ def trainLLMBySFT():
     # https://hf-mirror.com/datasets/YeungNLP/firefly-train-1.1M
     # 加载数据
     test_dataset = load_dataset(
-        "E:/python_projiect/voice_chat/models/datasets/YeungNLP/firefly-train-1.1m/",
+        "./datasets/YeungNLP/firefly-train-1.1m/",
         split="train[:500]")
 
     print(test_dataset)
@@ -84,7 +84,7 @@ def trainLLMBySFT():
     余时在三司，求访两朝墨敕不获，然人人能诵其言，议亦竟寝。<|im_end|>
     '''
 
-    tokenizer = AutoTokenizer.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
+    tokenizer = AutoTokenizer.from_pretrained("./models/Qwen/Qwen2.5-0.5B-Instruct")
 
     def format_prompt(example):
         chat = [
@@ -116,9 +116,7 @@ def trainLLMBySFT():
     '''
 
     # 第三步 加载模型
-
-    model = AutoModelForCausalLM.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
-    tokenizer = AutoTokenizer.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
+    model = AutoModelForCausalLM.from_pretrained("./models/Qwen/Qwen2.5-0.5B-Instruct")
     # tokenizer.padding_size="left"
 
     # 第四步 配置lara
@@ -169,7 +167,6 @@ def trainLLMBySFT():
     '''
 
     # 第6步 训练结果和基础模型合并为新模型
-
     model_peft = AutoPeftModelForCausalLM.from_pretrained(
         "./results/final-result",
         # device_map="aoto",
@@ -201,7 +198,7 @@ def trainLLMBySFT():
     merged_model.save_pretrained("./results/merged_model", )
 
     # 第9步 模型合并后的使用
-    model = AutoModelForCausalLM.from_pretrained("E:/python_projiect/nanoGPT/course_bbruceyuan/results/merged_model")
+    model = AutoModelForCausalLM.from_pretrained("./results/merged_model")
 
     # 第10步 新模型的推理验证
     pipe = pipeline(task="text-generation",model = model,tokenizer=tokenizer)
