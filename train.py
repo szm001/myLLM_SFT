@@ -31,16 +31,22 @@ Learn less，forget less
 '''
 import accelerate
 import os
+from datasets import load_dataset
+from transformers import AutoTokenizer,AutoModelForCausalLM
+from peft import LoraConfig, get_peft_model
+from transformers import TrainingArguments
+from trl import SFTTrainer
+from peft import AutoPeftModelForCausalLM
+from transformers import pipeline
+
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 os.environ["HF_HOME"] = "E:/python_projiect/models/"
-
 
 def trainLLMBySFT():
     # 第一步下载数据集，加载数据
     # 下载地址
     # https://hf-mirror.com/datasets/YeungNLP/firefly-train-1.1M
     # 加载数据
-    from datasets import load_dataset
     test_dataset = load_dataset(
         "E:/python_projiect/voice_chat/models/datasets/YeungNLP/firefly-train-1.1m/",
         split="train[:500]")
@@ -78,7 +84,6 @@ def trainLLMBySFT():
     余时在三司，求访两朝墨敕不获，然人人能诵其言，议亦竟寝。<|im_end|>
     '''
 
-    from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
 
     def format_prompt(example):
@@ -93,7 +98,7 @@ def trainLLMBySFT():
 
     dataset = test_dataset.map(
         format_prompt,
-        remove_columns=test_dataset.column_names
+        remove_columns = test_dataset.column_names
     )
     print(dataset)
     '''
@@ -111,13 +116,12 @@ def trainLLMBySFT():
     '''
 
     # 第三步 加载模型
-    from transformers import AutoModelForCausalLM
+
     model = AutoModelForCausalLM.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
     tokenizer = AutoTokenizer.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
     # tokenizer.padding_size="left"
 
     # 第四步 配置lara
-    from peft import LoraConfig, get_peft_model
     peft_config = LoraConfig(
         lora_alpha=32,
         lora_dropout=0.1,
@@ -129,7 +133,6 @@ def trainLLMBySFT():
     model_lora = get_peft_model(model, peft_config)
 
     # 第5步 训练配置
-    from transformers import TrainingArguments
     output_dir = "./results"
     training_arguments = TrainingArguments(
         output_dir=output_dir,
@@ -146,7 +149,6 @@ def trainLLMBySFT():
         max_steps=2,
     )
 
-    from trl import SFTTrainer
     trainer = SFTTrainer(
         model=model_lora,
         args=training_arguments,
@@ -167,7 +169,7 @@ def trainLLMBySFT():
     '''
 
     # 第6步 训练结果和基础模型合并为新模型
-    from peft import AutoPeftModelForCausalLM
+
     model_peft = AutoPeftModelForCausalLM.from_pretrained(
         "./results/final-result",
         # device_map="aoto",
@@ -175,7 +177,6 @@ def trainLLMBySFT():
     merged_model = model_peft.merge_and_unload()
 
     # 第7步 新模型的推理验证,此时新模型还没保存到文件，还是临时验证
-    from transformers import pipeline
     pipe = pipeline(task="text-generation", model=merged_model, tokenizer=tokenizer)
     prompt_example = """
     <|im_start|>system
@@ -200,13 +201,9 @@ def trainLLMBySFT():
     merged_model.save_pretrained("./results/merged_model", )
 
     # 第9步 模型合并后的使用
-    from transformers import AutoTokenizer, AutoModelForCausalLM
-    tokenizer = AutoTokenizer.from_pretrained("E:/python_projiect/voice_chat/models/Qwen/Qwen2.5-0.5B-Instruct")
     model = AutoModelForCausalLM.from_pretrained("E:/python_projiect/nanoGPT/course_bbruceyuan/results/merged_model")
 
-
     # 第10步 新模型的推理验证
-    from transformers import pipeline
     pipe = pipeline(task="text-generation",model = model,tokenizer=tokenizer)
     prompt_example = """
     <|im_start|>system
